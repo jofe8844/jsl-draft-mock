@@ -1,92 +1,635 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>JSL Draft Mock</title>
-
-<style>
-body{
-font-family:Arial;
-background:#0f172a;
-color:white;
-text-align:center;
-padding:40px;
-}
-
-h1{
-font-size:48px;
-margin-bottom:10px;
-}
-
-.board{
-display:grid;
-grid-template-columns:repeat(4,1fr);
-gap:20px;
-margin-top:40px;
-}
-
-.team{
-background:#1e293b;
-padding:20px;
-border-radius:10px;
-}
-
-.player{
-background:#334155;
-padding:6px;
-margin:5px;
-border-radius:5px;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>JSL Draft Mock</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #fff;
+    }
+    .header {
+      padding: 24px;
+      border-bottom: 1px solid #334155;
+      background: #111827;
+    }
+    .header h1 {
+      margin: 0 0 8px;
+      font-size: 40px;
+    }
+    .header p {
+      margin: 0;
+      color: #cbd5e1;
+    }
+    .topbar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+    button, select, input {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #334155;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .container {
+      padding: 24px;
+      display: grid;
+      grid-template-columns: 320px 1fr 320px;
+      gap: 20px;
+    }
+    .card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 18px;
+    }
+    .card h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    .small {
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+    .team-box, .player-box, .log-box, .best-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .team-title, .player-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid-players {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .player-btn {
+      width: 100%;
+      text-align: left;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px;
+    }
+    .player-btn:hover {
+      background: #162033;
+    }
+    .pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .tier-S { background: #a16207; }
+    .tier-A { background: #166534; }
+    .tier-B { background: #1d4ed8; }
+    .tier-C { background: #475569; }
+    .tier-D { background: #7f1d1d; }
+    .timer {
+      font-size: 44px;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+    .on-clock {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+    .controls-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .team-roster span {
+      display: inline-block;
+      background: #334155;
+      border-radius: 999px;
+      padding: 6px 10px;
+      margin: 4px 4px 0 0;
+      font-size: 12px;
+    }
+    .rank-input {
+      width: 100%;
+      margin-top: 6px;
+      background: #334155;
+      color: #fff;
+    }
+    .tier-select {
+      width: 100%;
+      margin-top: 6px;
+      background: #334155;
+      color: #fff;
+    }
+    .search-row {
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .search-row input, .search-row select {
+      background: #0f172a;
+      color: white;
+      border: 1px solid #334155;
+    }
+    @media (max-width: 1200px) {
+      .container { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
-
 <body>
+  <div class="header">
+    <h1>JSL Draft Mock</h1>
+    <p>JFL Basketball Draft Board</p>
+    <div class="topbar">
+      <button id="startBtn">Start Draft</button>
+      <button id="pauseBtn" class="secondary">Pause Clock</button>
+      <button id="resetBtn" class="secondary">Reset Draft</button>
+      <button id="undoBtn" class="secondary">Undo Last Pick</button>
+    </div>
+  </div>
 
-<h1>JSL Draft Mock</h1>
-<p>Mock Draft Simulator</p>
+  <div class="container">
+    <div>
+      <div class="card">
+        <h2>Teams & Draft Slots</h2>
+        <div id="teamsList"></div>
+      </div>
 
-<div class="board">
+      <div class="card" style="margin-top:20px;">
+        <h2>Pick Clock</h2>
+        <div class="timer" id="timer">1:00</div>
+        <div class="small">1 minute per pick</div>
+        <div class="on-clock" id="onClock">Not started</div>
+      </div>
+    </div>
 
-<div class="team">
-<h2>Smash House</h2>
-<p>Captain: Jesse Sloan</p>
-</div>
+    <div>
+      <div class="card">
+        <h2>ESPN-Style Big Board</h2>
+        <div class="search-row">
+          <input id="searchInput" type="text" placeholder="Search players" />
+          <select id="positionFilter">
+            <option value="All">All Positions</option>
+            <option value="Guard">Guard</option>
+            <option value="Forward">Forward</option>
+            <option value="Center">Center</option>
+          </select>
+        </div>
+        <div class="grid-players" id="playersGrid"></div>
+      </div>
 
-<div class="team">
-<h2>Town Appliance</h2>
-<p>Captain: Yitzi Gross</p>
-</div>
+      <div class="card" style="margin-top:20px;">
+        <h2>Draft Log</h2>
+        <div id="draftLog"></div>
+      </div>
+    </div>
 
-<div class="team">
-<h2>Teller Life Insurance</h2>
-<p>Captain: Moshe Feintuch</p>
-</div>
+    <div>
+      <div class="card">
+        <h2>Best Available</h2>
+        <div id="bestAvailable"></div>
+      </div>
 
-<div class="team">
-<h2>Twillory</h2>
-<p>Captain: Rich Hochhouser</p>
-</div>
+      <div class="card" style="margin-top:20px;">
+        <h2>Commissioner Rankings Panel</h2>
+        <div class="small" style="margin-bottom:12px;">Only you edit rankings and tiers here. Player names stay the same.</div>
+        <div id="rankingsPanel"></div>
+      </div>
 
-<div class="team">
-<h2>Altbanq</h2>
-<p>Captain: Shmuel Englander</p>
-</div>
+      <div class="card" style="margin-top:20px;">
+        <h2>Teams</h2>
+        <div id="teamsRosters"></div>
+      </div>
+    </div>
+  </div>
 
-<div class="team">
-<h2>Graber Media</h2>
-<p>Captain: Chaim Homnick</p>
-</div>
+  <script>
+    const DRAFT_TIME = 60;
 
-<div class="team">
-<h2>Premium Pergolas</h2>
-<p>Captain: Michael Esquenazi</p>
-</div>
+    const teams = [
+      { team: "Smash House", captain: "Jesse Sloan", slot: "" },
+      { team: "Town Appliance", captain: "Yitzi Gross", slot: "" },
+      { team: "Teller Life Insurance", captain: "Moshe Feintuch", slot: "" },
+      { team: "Twillory", captain: "Rich Hochhouser", slot: "" },
+      { team: "Altbanq", captain: "Shmuel Englander", slot: "" },
+      { team: "Graber Media", captain: "Chaim Homnick", slot: "" },
+      { team: "Premium Pergolas", captain: "Michael Esquenazi", slot: "" },
+      { team: "Kol Ve'or", captain: "Yaakov Dvir", slot: "" }
+    ];
 
-<div class="team">
-<h2>Kol Ve'or</h2>
-<p>Captain: Yaakov Dvir</p>
-</div>
+    const players = [
+      { name: "Efraim Graber", position: "Forward", age: 34, ranking: 88, tier: "A" },
+      { name: "Mitch Pisarz", position: "Guard", age: 29, ranking: 95, tier: "S" },
+      { name: "Elazar Sauber", position: "Forward/Guard", age: 28, ranking: 93, tier: "S" },
+      { name: "Jerry Frenkel", position: "Forward/Guard", age: 36, ranking: 87, tier: "A" },
+      { name: "Zachary Sumner", position: "Forward", age: 32, ranking: 84, tier: "A" },
+      { name: "Donny Brodsky", position: "Guard", age: 28, ranking: 89, tier: "A" },
+      { name: "Gavriel Majeski", position: "Forward/Guard", age: 24, ranking: 91, tier: "S" },
+      { name: "Jonah Zrihen", position: "Forward", age: 29, ranking: 82, tier: "B" },
+      { name: "Jeremy Tabak", position: "Guard", age: 30, ranking: 83, tier: "B" },
+      { name: "Simcha Schick", position: "Forward", age: 43, ranking: 73, tier: "C" },
+      { name: "Yisrael Rubin", position: "Center", age: 28, ranking: 85, tier: "A" },
+      { name: "Ariel Melool", position: "Guard", age: 33, ranking: 81, tier: "B" },
+      { name: "Dan Levine", position: "Forward", age: 46, ranking: 68, tier: "C" },
+      { name: "Dovi Pfeffer", position: "Center", age: 25, ranking: 86, tier: "A" },
+      { name: "Eli Zidele", position: "Forward", age: 23, ranking: 80, tier: "B" },
+      { name: "Yedidya Lazar", position: "Guard", age: 33, ranking: 79, tier: "B" },
+      { name: "Avi Fuchs", position: "Forward", age: 40, ranking: 72, tier: "C" },
+      { name: "Adam Huttel", position: "Guard", age: 33, ranking: 77, tier: "B" },
+      { name: "Moshe Bobker", position: "Forward", age: 38, ranking: 74, tier: "C" },
+      { name: "Yoni Yanay", position: "Center", age: 19, ranking: 78, tier: "B" },
+      { name: "Chaim Portal", position: "Forward", age: 25, ranking: 83, tier: "B" },
+      { name: "David Cohen", position: "Guard", age: 23, ranking: 88, tier: "A" },
+      { name: "Sam Klein", position: "Guard", age: 36, ranking: 75, tier: "C" },
+      { name: "Mark Ross", position: "Guard", age: 41, ranking: 69, tier: "C" },
+      { name: "Shimi Schiffer", position: "Forward", age: 30, ranking: 82, tier: "B" },
+      { name: "Jacob Khafizov", position: "Guard", age: 18, ranking: 76, tier: "B" },
+      { name: "Daniel Vapne", position: "Center", age: 33, ranking: 79, tier: "B" },
+      { name: "Jacob Birn", position: "Center", age: 26, ranking: 81, tier: "B" },
+      { name: "Ari Belsky", position: "Guard", age: 31, ranking: 78, tier: "B" },
+      { name: "Avi Blush", position: "Guard", age: 18, ranking: 71, tier: "C" },
+      { name: "Yitzy Kessler", position: "Guard", age: 27, ranking: 80, tier: "B" },
+      { name: "Zevi Bachrach", position: "Center", age: 37, ranking: 70, tier: "C" },
+      { name: "Dovi Jaffe", position: "Guard", age: 16, ranking: 66, tier: "D" },
+      { name: "Ari Schwartz", position: "Forward/Guard", age: 36, ranking: 77, tier: "B" },
+      { name: "Avi Newman", position: "Guard", age: 26, ranking: 82, tier: "B" },
+      { name: "Daniel Greenbaum", position: "Guard", age: 18, ranking: 67, tier: "D" },
+      { name: "Yehuda Zin", position: "Guard", age: 28, ranking: 84, tier: "A" },
+      { name: "Evan Weinstein", position: "Guard", age: 42, ranking: 68, tier: "C" },
+      { name: "Dovid Bobker", position: "Guard", age: 21, ranking: 74, tier: "C" },
+      { name: "David Benatar", position: "Forward", age: 19, ranking: 75, tier: "C" },
+      { name: "Menachem Frischman", position: "Guard", age: 38, ranking: 72, tier: "C" },
+      { name: "Sruli Botwinick", position: "Guard", age: 31, ranking: 79, tier: "B" },
+      { name: "Steven Mandel", position: "Guard", age: 38, ranking: 73, tier: "C" },
+      { name: "Shimon Shoshan", position: "Guard", age: 27, ranking: 83, tier: "B" },
+      { name: "Yechiel Zitwer", position: "Forward/Guard", age: 27, ranking: 84, tier: "A" },
+      { name: "Eli Whiskey", position: "Forward", age: 43, ranking: 69, tier: "C" },
+      { name: "Yosef Fein", position: "Guard", age: 30, ranking: 78, tier: "B" },
+      { name: "Chaim Taboli", position: "Forward/Center", age: 29, ranking: 85, tier: "A" }
+    ];
 
-</div>
+    let draftStarted = false;
+    let draftLog = [];
+    let timer = DRAFT_TIME;
+    let timerRunning = false;
+    let interval = null;
 
+    function tierValue(t) {
+      return { S: 5, A: 4, B: 3, C: 2, D: 1 }[t] || 0;
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${String(s).padStart(2, "0")}`;
+    }
+
+    function orderedTeams() {
+      return [...teams]
+        .filter(t => t.slot !== "")
+        .sort((a, b) => Number(a.slot) - Number(b.slot));
+    }
+
+    function snakeOrder() {
+      const ordered = orderedTeams();
+      if (ordered.length !== teams.length) return [];
+      const rounds = Math.ceil(players.length / teams.length);
+      const order = [];
+      for (let r = 1; r <= rounds; r++) {
+        const roundOrder = r % 2 === 1 ? [...ordered] : [...ordered].reverse();
+        roundOrder.forEach(team => order.push({ round: r, team: team.team }));
+      }
+      return order;
+    }
+
+    function draftedNames() {
+      return new Set(draftLog.map(p => p.player.name));
+    }
+
+    function availablePlayers() {
+      const drafted = draftedNames();
+      return players.filter(p => !drafted.has(p.name));
+    }
+
+    function currentTurn() {
+      const order = snakeOrder();
+      return order[draftLog.length] || null;
+    }
+
+    function resetClock() {
+      timer = DRAFT_TIME;
+      render();
+    }
+
+    function startClock() {
+      clearInterval(interval);
+      timerRunning = true;
+      interval = setInterval(() => {
+        if (!timerRunning) return;
+        if (timer > 0) {
+          timer--;
+        }
+        render();
+      }, 1000);
+    }
+
+    function stopClock() {
+      timerRunning = false;
+      render();
+    }
+
+    function setSlot(teamName, slotValue) {
+      teams.forEach(t => {
+        if (t.slot === slotValue) t.slot = "";
+      });
+      const team = teams.find(t => t.team === teamName);
+      team.slot = slotValue;
+      render();
+    }
+
+    function makePick(playerName) {
+      if (!draftStarted) return;
+      const turn = currentTurn();
+      if (!turn) return;
+      const player = players.find(p => p.name === playerName);
+      if (!player) return;
+
+      draftLog.push({
+        pick: draftLog.length + 1,
+        round: turn.round,
+        team: turn.team,
+        player: { ...player }
+      });
+
+      resetClock();
+      if (currentTurn()) startClock();
+      else stopClock();
+      render();
+    }
+
+    function undoLastPick() {
+      if (draftLog.length === 0) return;
+      draftLog.pop();
+      resetClock();
+      if (draftStarted && currentTurn()) startClock();
+      render();
+    }
+
+    function resetDraft() {
+      draftStarted = false;
+      draftLog = [];
+      timer = DRAFT_TIME;
+      stopClock();
+      teams.forEach(t => t.slot = "");
+      render();
+    }
+
+    function teamRoster(teamName) {
+      return draftLog.filter(p => p.team === teamName).map(p => p.player.name);
+    }
+
+    function filteredPlayers() {
+      const search = document.getElementById("searchInput")?.value?.toLowerCase() || "";
+      const position = document.getElementById("positionFilter")?.value || "All";
+
+      return availablePlayers()
+        .filter(p => {
+          const searchOk = p.name.toLowerCase().includes(search);
+          const positionOk = position === "All" || p.position.toLowerCase().includes(position.toLowerCase());
+          return searchOk && positionOk;
+        })
+        .sort((a, b) => {
+          if (tierValue(b.tier) !== tierValue(a.tier)) return tierValue(b.tier) - tierValue(a.tier);
+          return b.ranking - a.ranking;
+        });
+    }
+
+    function bestAvailablePlayers() {
+      return [...availablePlayers()]
+        .sort((a, b) => {
+          if (tierValue(b.tier) !== tierValue(a.tier)) return tierValue(b.tier) - tierValue(a.tier);
+          return b.ranking - a.ranking;
+        })
+        .slice(0, 10);
+    }
+
+    function renderTeams() {
+      const el = document.getElementById("teamsList");
+      el.innerHTML = "";
+      teams.forEach(team => {
+        const box = document.createElement("div");
+        box.className = "team-box";
+        box.innerHTML = `
+          <div class="team-title">${team.team}</div>
+          <div class="small">Captain: ${team.captain}</div>
+        `;
+
+        const select = document.createElement("select");
+        select.style.marginTop = "10px";
+        select.style.width = "100%";
+        select.innerHTML = `<option value="">Choose draft slot</option>` +
+          [...Array(teams.length)].map((_, i) => {
+            const val = String(i + 1);
+            const taken = teams.some(t => t.team !== team.team && t.slot === val);
+            return `<option value="${val}" ${team.slot === val ? "selected" : ""} ${taken ? "disabled" : ""}>Draft #${val}</option>`;
+          }).join("");
+        select.onchange = (e) => setSlot(team.team, e.target.value);
+        box.appendChild(select);
+        el.appendChild(box);
+      });
+    }
+
+    function renderClock() {
+      document.getElementById("timer").textContent = formatTime(timer);
+      const turn = currentTurn();
+      document.getElementById("onClock").textContent = draftStarted
+        ? (turn ? `${turn.team} is on the clock` : "Draft complete")
+        : "Not started";
+    }
+
+    function renderPlayers() {
+      const el = document.getElementById("playersGrid");
+      el.innerHTML = "";
+      filteredPlayers().forEach(player => {
+        const btn = document.createElement("button");
+        btn.className = "player-btn";
+        btn.disabled = !draftStarted || !currentTurn();
+        btn.onclick = () => makePick(player.name);
+        btn.innerHTML = `
+          <div class="player-title">${player.name}</div>
+          <div class="small">${player.position} • Age ${player.age}</div>
+          <div style="margin-top:8px;">
+            <span class="pill tier-${player.tier}">${player.tier} Tier</span>
+            <span class="small" style="margin-left:8px;">Ranking: ${player.ranking}</span>
+          </div>
+        `;
+        el.appendChild(btn);
+      });
+    }
+
+    function renderBestAvailable() {
+      const el = document.getElementById("bestAvailable");
+      el.innerHTML = "";
+      bestAvailablePlayers().forEach((player, i) => {
+        const box = document.createElement("div");
+        box.className = "best-box";
+        box.innerHTML = `
+          <div class="player-title">#${i + 1} ${player.name}</div>
+          <div class="small">${player.position} • ${player.tier} Tier • ${player.ranking}</div>
+        `;
+        el.appendChild(box);
+      });
+    }
+
+    function renderLog() {
+      const el = document.getElementById("draftLog");
+      el.innerHTML = "";
+      if (draftLog.length === 0) {
+        el.innerHTML = `<div class="small">No picks yet.</div>`;
+        return;
+      }
+      [...draftLog].reverse().forEach(item => {
+        const box = document.createElement("div");
+        box.className = "log-box";
+        box.innerHTML = `
+          <div class="player-title">Pick #${item.pick}</div>
+          <div class="small">Round ${item.round}</div>
+          <div style="margin-top:6px;">${item.team} selected <strong>${item.player.name}</strong></div>
+        `;
+        el.appendChild(box);
+      });
+    }
+
+    function renderRosters() {
+      const el = document.getElementById("teamsRosters");
+      el.innerHTML = "";
+      teams.forEach(team => {
+        const roster = teamRoster(team.team);
+        const box = document.createElement("div");
+        box.className = "team-box";
+        box.innerHTML = `
+          <div class="team-title">${team.team}</div>
+          <div class="small">Captain: ${team.captain}</div>
+          <div class="team-roster" style="margin-top:8px;">
+            ${roster.length ? roster.map(name => `<span>${name}</span>`).join("") : `<span>No picks yet</span>`}
+          </div>
+        `;
+        el.appendChild(box);
+      });
+    }
+
+    function renderRankingsPanel() {
+      const el = document.getElementById("rankingsPanel");
+      el.innerHTML = "";
+      [...players]
+        .sort((a, b) => {
+          if (tierValue(b.tier) !== tierValue(a.tier)) return tierValue(b.tier) - tierValue(a.tier);
+          return b.ranking - a.ranking;
+        })
+        .forEach(player => {
+          const box = document.createElement("div");
+          box.className = "player-box";
+          box.innerHTML = `
+            <div class="player-title">${player.name}</div>
+            <div class="small">${player.position} • Age ${player.age}</div>
+          `;
+
+          const rankInput = document.createElement("input");
+          rankInput.type = "number";
+          rankInput.className = "rank-input";
+          rankInput.value = player.ranking;
+          rankInput.onchange = (e) => {
+            player.ranking = Number(e.target.value) || 0;
+            render();
+          };
+
+          const tierSelect = document.createElement("select");
+          tierSelect.className = "tier-select";
+          tierSelect.innerHTML = `
+            <option value="S" ${player.tier === "S" ? "selected" : ""}>S Tier</option>
+            <option value="A" ${player.tier === "A" ? "selected" : ""}>A Tier</option>
+            <option value="B" ${player.tier === "B" ? "selected" : ""}>B Tier</option>
+            <option value="C" ${player.tier === "C" ? "selected" : ""}>C Tier</option>
+            <option value="D" ${player.tier === "D" ? "selected" : ""}>D Tier</option>
+          `;
+          tierSelect.onchange = (e) => {
+            player.tier = e.target.value;
+            render();
+          };
+
+          box.appendChild(rankInput);
+          box.appendChild(tierSelect);
+          el.appendChild(box);
+        });
+    }
+
+    function render() {
+      renderTeams();
+      renderClock();
+      renderPlayers();
+      renderBestAvailable();
+      renderLog();
+      renderRosters();
+      renderRankingsPanel();
+
+      document.getElementById("startBtn").disabled = orderedTeams().length !== teams.length || draftStarted;
+    }
+
+    document.getElementById("startBtn").onclick = () => {
+      if (orderedTeams().length !== teams.length) {
+        alert("Each team must choose a draft slot first.");
+        return;
+      }
+      draftStarted = true;
+      timer = DRAFT_TIME;
+      startClock();
+      render();
+    };
+
+    document.getElementById("pauseBtn").onclick = () => {
+      if (!draftStarted) return;
+      if (timerRunning) stopClock();
+      else startClock();
+      document.getElementById("pauseBtn").textContent = timerRunning ? "Pause Clock" : "Resume Clock";
+    };
+
+    document.getElementById("resetBtn").onclick = resetDraft;
+    document.getElementById("undoBtn").onclick = undoLastPick;
+
+    document.getElementById("searchInput").addEventListener("input", render);
+    document.getElementById("positionFilter").addEventListener("change", render);
+
+    render();
+  </script>
 </body>
 </html>
