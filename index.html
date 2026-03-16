@@ -1,641 +1,92 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Users, Trophy, ArrowRightLeft, RotateCcw, CheckCircle2, Star, Search, Clock3, MonitorPlay, Shield } from "lucide-react";
+<!DOCTYPE html>
+<html>
+<head>
+<title>JSL Draft Mock</title>
 
-const DRAFT_TIME_PER_PICK = 60;
-
-const initialCaptains = [
-  { team: "Smash House", captain: "Jesse Sloan" },
-  { team: "Town Appliance", captain: "Yitzi Gross" },
-  { team: "Teller Life Insurance", captain: "Moshe Feintuch" },
-  { team: "Twillory", captain: "Rich Hochhouser" },
-  { team: "Altbanq", captain: "Shmuel Englander" },
-  { team: "Graber Media", captain: "Chaim Homnick" },
-  { team: "Premium Pergolas", captain: "Michael Esquenazi" },
-  { team: "Kol Ve'or", captain: "Yaakov Dvir" },
-];
-
-const initialPlayers = [
-  { name: "Efraim Graber", position: "Forward", age: 34, ranking: 88, tier: "A" },
-  { name: "Mitch Pisarz", position: "Guard", age: 29, ranking: 95, tier: "S" },
-  { name: "Elazar Sauber", position: "Forward/Guard", age: 28, ranking: 93, tier: "S" },
-  { name: "Jerry Frenkel", position: "Forward/Guard", age: 36, ranking: 87, tier: "A" },
-  { name: "Zachary Sumner", position: "Forward", age: 32, ranking: 84, tier: "A" },
-  { name: "Donny Brodsky", position: "Guard", age: 28, ranking: 89, tier: "A" },
-  { name: "Gavriel Majeski", position: "Forward/Guard", age: 24, ranking: 91, tier: "S" },
-  { name: "Jonah Zrihen", position: "Forward", age: 29, ranking: 82, tier: "B" },
-  { name: "Jeremy Tabak", position: "Guard", age: 30, ranking: 83, tier: "B" },
-  { name: "Simcha Schick", position: "Forward", age: 43, ranking: 73, tier: "C" },
-  { name: "Yisrael Rubin", position: "Center", age: 28, ranking: 85, tier: "A" },
-  { name: "Ariel Melool", position: "Guard", age: 33, ranking: 81, tier: "B" },
-  { name: "Dan Levine", position: "Forward", age: 46, ranking: 68, tier: "C" },
-  { name: "Dovi Pfeffer", position: "Center", age: 25, ranking: 86, tier: "A" },
-  { name: "Eli Zidele", position: "Forward", age: 23, ranking: 80, tier: "B" },
-  { name: "Yedidya Lazar", position: "Guard", age: 33, ranking: 79, tier: "B" },
-  { name: "Avi Fuchs", position: "Forward", age: 40, ranking: 72, tier: "C" },
-  { name: "Adam Huttel", position: "Guard", age: 33, ranking: 77, tier: "B" },
-  { name: "Moshe Bobker", position: "Forward", age: 38, ranking: 74, tier: "C" },
-  { name: "Yoni Yanay", position: "Center", age: 19, ranking: 78, tier: "B" },
-  { name: "Chaim Portal", position: "Forward", age: 25, ranking: 83, tier: "B" },
-  { name: "David Cohen", position: "Guard", age: 23, ranking: 88, tier: "A" },
-  { name: "Sam Klein", position: "Guard", age: 36, ranking: 75, tier: "C" },
-  { name: "Mark Ross", position: "Guard", age: 41, ranking: 69, tier: "C" },
-  { name: "Shimi Schiffer", position: "Forward", age: 30, ranking: 82, tier: "B" },
-  { name: "Jacob Khafizov", position: "Guard", age: 18, ranking: 76, tier: "B" },
-  { name: "Daniel Vapne", position: "Center", age: 33, ranking: 79, tier: "B" },
-  { name: "Jacob Birn", position: "Center", age: 26, ranking: 81, tier: "B" },
-  { name: "Ari Belsky", position: "Guard", age: 31, ranking: 78, tier: "B" },
-  { name: "Avi Blush", position: "Guard", age: 18, ranking: 71, tier: "C" },
-  { name: "Yitzy Kessler", position: "Guard", age: 27, ranking: 80, tier: "B" },
-  { name: "Zevi Bachrach", position: "Center", age: 37, ranking: 70, tier: "C" },
-  { name: "Dovi Jaffe", position: "Guard", age: 16, ranking: 66, tier: "D" },
-  { name: "Ari Schwartz", position: "Forward/Guard", age: 36, ranking: 77, tier: "B" },
-  { name: "Avi Newman", position: "Guard", age: 26, ranking: 82, tier: "B" },
-  { name: "Daniel Greenbaum", position: "Guard", age: 18, ranking: 67, tier: "D" },
-  { name: "Yehuda Zin", position: "Guard", age: 28, ranking: 84, tier: "A" },
-  { name: "Evan Weinstein", position: "Guard", age: 42, ranking: 68, tier: "C" },
-  { name: "Dovid Bobker", position: "Guard", age: 21, ranking: 74, tier: "C" },
-  { name: "David Benatar", position: "Forward", age: 19, ranking: 75, tier: "C" },
-  { name: "Menachem Frischman", position: "Guard", age: 38, ranking: 72, tier: "C" },
-  { name: "Sruli Botwinick", position: "Guard", age: 31, ranking: 79, tier: "B" },
-  { name: "Steven Mandel", position: "Guard", age: 38, ranking: 73, tier: "C" },
-  { name: "Shimon Shoshan", position: "Guard", age: 27, ranking: 83, tier: "B" },
-  { name: "Yechiel Zitwer", position: "Forward/Guard", age: 27, ranking: 84, tier: "A" },
-  { name: "Eli Whiskey", position: "Forward", age: 43, ranking: 69, tier: "C" },
-  { name: "Yosef Fein", position: "Guard", age: 30, ranking: 78, tier: "B" },
-  { name: "Chaim Taboli", position: "Forward/Center", age: 29, ranking: 85, tier: "A" },
-];
-
-const tierOrder = { S: 4, A: 3, B: 2, C: 1, D: 0 };
-
-function getSnakeOrder(order, totalRounds) {
-  const rounds = [];
-  for (let round = 1; round <= totalRounds; round++) {
-    const picks = round % 2 === 1 ? [...order] : [...order].reverse();
-    rounds.push(...picks.map((team) => ({ round, captain: team })));
-  }
-  return rounds;
+<style>
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+padding:40px;
 }
 
-function formatTime(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
+h1{
+font-size:48px;
+margin-bottom:10px;
 }
 
-function tierBadgeClass(tier) {
-  const map = {
-    S: "bg-amber-400/20 text-amber-200 border-amber-300/20",
-    A: "bg-emerald-400/20 text-emerald-200 border-emerald-300/20",
-    B: "bg-sky-400/20 text-sky-200 border-sky-300/20",
-    C: "bg-slate-400/20 text-slate-200 border-slate-300/20",
-    D: "bg-rose-400/20 text-rose-200 border-rose-300/20",
-  };
-  return map[tier] || map.C;
+.board{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:20px;
+margin-top:40px;
 }
 
-export default function JSLDraftLeagueSimulator() {
-  const [captains, setCaptains] = useState(initialCaptains);
-  const [players, setPlayers] = useState(initialPlayers);
-  const [newCaptainTeam, setNewCaptainTeam] = useState("");
-  const [newCaptainName, setNewCaptainName] = useState("");
-  const [newPlayer, setNewPlayer] = useState("");
-  const [draftSlots, setDraftSlots] = useState({});
-  const [draftStarted, setDraftStarted] = useState(false);
-  const [draftLog, setDraftLog] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [positionFilter, setPositionFilter] = useState("All");
-  const [timerSeconds, setTimerSeconds] = useState(DRAFT_TIME_PER_PICK);
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [adminMode, setAdminMode] = useState(true);
-
-  const orderedCaptains = useMemo(() => {
-    const slotEntries = Object.entries(draftSlots)
-      .filter(([, slot]) => slot)
-      .sort((a, b) => Number(a[1]) - Number(b[1]));
-    return slotEntries.map(([team]) => team);
-  }, [draftSlots]);
-
-  const rounds = Math.ceil(players.length / Math.max(captains.length, 1));
-  const snakeOrder = useMemo(() => {
-    if (orderedCaptains.length !== captains.length) return [];
-    return getSnakeOrder(orderedCaptains, rounds);
-  }, [orderedCaptains, captains.length, rounds]);
-
-  const draftedPlayers = new Set(draftLog.map((pick) => pick.player.name));
-  const availablePlayers = useMemo(() => players.filter((p) => !draftedPlayers.has(p.name)), [players, draftLog]);
-  const currentPickIndex = draftLog.length;
-  const currentTurn = snakeOrder[currentPickIndex] || null;
-
-  const filteredPlayers = useMemo(() => {
-    return availablePlayers.filter((player) => {
-      const matchesSearch = player.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesPosition = positionFilter === "All" || player.position.toLowerCase().includes(positionFilter.toLowerCase());
-      return matchesSearch && matchesPosition;
-    });
-  }, [availablePlayers, searchTerm, positionFilter]);
-
-  const bestAvailable = useMemo(() => {
-    return [...availablePlayers]
-      .sort((a, b) => {
-        if (tierOrder[b.tier] !== tierOrder[a.tier]) return tierOrder[b.tier] - tierOrder[a.tier];
-        return b.ranking - a.ranking;
-      })
-      .slice(0, 10);
-  }, [availablePlayers]);
-
-  const teams = useMemo(() => {
-    const grouped = {};
-    captains.forEach((captain) => {
-      grouped[captain.team] = [];
-    });
-    draftLog.forEach((pick) => {
-      if (!grouped[pick.captain]) grouped[pick.captain] = [];
-      grouped[pick.captain].push(pick.player);
-    });
-    return grouped;
-  }, [captains, draftLog]);
-
-  const assignedSlots = Object.values(draftSlots).filter(Boolean);
-  const canStartDraft = captains.length > 1 && orderedCaptains.length === captains.length;
-
-  useEffect(() => {
-    if (!draftStarted || !currentTurn || !timerRunning) return;
-    const interval = setInterval(() => {
-      setTimerSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [draftStarted, currentTurn, timerRunning, draftLog.length]);
-
-  useEffect(() => {
-    if (draftStarted && currentTurn) {
-      setTimerSeconds(DRAFT_TIME_PER_PICK);
-      setTimerRunning(true);
-    }
-  }, [draftLog.length, draftStarted, currentTurn]);
-
-  const addCaptain = () => {
-    const team = newCaptainTeam.trim();
-    const captain = newCaptainName.trim();
-    if (!team || !captain || captains.some((c) => c.team === team)) return;
-    setCaptains([...captains, { team, captain }]);
-    setNewCaptainTeam("");
-    setNewCaptainName("");
-  };
-
-  const addPlayer = () => {
-    const name = newPlayer.trim();
-    if (!name || players.some((p) => p.name === name)) return;
-    setPlayers([...players, { name, position: "Guard", age: 0, ranking: 70, tier: "C" }]);
-    setNewPlayer("");
-  };
-
-  const assignSlot = (team, slot) => {
-    const next = { ...draftSlots };
-    Object.keys(next).forEach((c) => {
-      if (next[c] === slot) next[c] = "";
-    });
-    next[team] = slot;
-    setDraftSlots(next);
-  };
-
-  const makePick = (player) => {
-    if (!draftStarted || !currentTurn) return;
-    setDraftLog([
-      ...draftLog,
-      {
-        pickNumber: draftLog.length + 1,
-        round: currentTurn.round,
-        captain: currentTurn.captain,
-        player,
-      },
-    ]);
-  };
-
-  const resetDraft = () => {
-    setDraftStarted(false);
-    setDraftLog([]);
-    setDraftSlots({});
-    setTimerSeconds(DRAFT_TIME_PER_PICK);
-    setTimerRunning(false);
-  };
-
-  const removeCaptain = (team) => {
-    const nextCaptains = captains.filter((c) => c.team !== team);
-    const nextSlots = { ...draftSlots };
-    delete nextSlots[team];
-    setCaptains(nextCaptains);
-    setDraftSlots(nextSlots);
-    setDraftStarted(false);
-    setDraftLog([]);
-  };
-
-  const removePlayer = (name) => {
-    setPlayers(players.filter((p) => p.name !== name));
-    setDraftStarted(false);
-    setDraftLog([]);
-  };
-
-  const updatePlayerField = (name, field, value) => {
-    setPlayers((prev) => prev.map((player) => (player.name === name ? { ...player, [field]: field === "ranking" ? Number(value) : value } : player)));
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-        >
-          <div>
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
-              <Badge className="rounded-full px-3 py-1 text-sm">JFL Basketball Draft League</Badge>
-              <Badge className="rounded-full px-3 py-1 text-sm">ESPN Style Big Board</Badge>
-              <Badge className="rounded-full px-3 py-1 text-sm">1:00 Pick Clock</Badge>
-            </div>
-            <h1 className="text-3xl md:text-5xl font-black tracking-tight">Live Draft Board</h1>
-            <p className="text-slate-300 mt-2 max-w-3xl text-sm md:text-base">
-              Captains choose their own draft slots, the board updates live, and rankings and tiers stay attached to players without ever changing the player names.
-            </p>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <Button
-              onClick={() => {
-                setDraftStarted(true);
-                setTimerSeconds(DRAFT_TIME_PER_PICK);
-                setTimerRunning(true);
-              }}
-              disabled={!canStartDraft || draftStarted}
-              className="rounded-2xl"
-            >
-              <CheckCircle2 className="w-4 h-4 mr-2" />
-              Start Draft
-            </Button>
-            <Button variant="secondary" onClick={() => setTimerRunning((v) => !v)} className="rounded-2xl" disabled={!draftStarted || !currentTurn}>
-              <Clock3 className="w-4 h-4 mr-2" />
-              {timerRunning ? "Pause Clock" : "Resume Clock"}
-            </Button>
-            <Button variant="secondary" onClick={resetDraft} className="rounded-2xl">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
-            <Button variant={adminMode ? "default" : "secondary"} onClick={() => setAdminMode((v) => !v)} className="rounded-2xl">
-              <Shield className="w-4 h-4 mr-2" />
-              {adminMode ? "Admin On" : "Admin Off"}
-            </Button>
-          </div>
-        </motion.div>
-
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-1 space-y-6">
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Users className="w-5 h-5" /> Teams & Captains
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex gap-2">
-                  <div className="grid grid-cols-1 gap-2 flex-1">
-                    <Input value={newCaptainTeam} onChange={(e) => setNewCaptainTeam(e.target.value)} placeholder="Add team name" className="bg-white/10 border-white/10 text-white" />
-                    <Input value={newCaptainName} onChange={(e) => setNewCaptainName(e.target.value)} placeholder="Add captain name" className="bg-white/10 border-white/10 text-white" />
-                  </div>
-                  <Button onClick={addCaptain} className="rounded-2xl">Add</Button>
-                </div>
-
-                <div className="space-y-3">
-                  {captains.map((captain) => (
-                    <div key={captain.team} className="p-3 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="font-semibold">{captain.team}</div>
-                          <div className="text-sm text-slate-400">Captain: {captain.captain}</div>
-                        </div>
-                        <Button variant="ghost" size="sm" onClick={() => removeCaptain(captain.team)}>Remove</Button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Select value={draftSlots[captain.team] || "unassigned"} onValueChange={(value) => value !== "unassigned" && assignSlot(captain.team, value)}>
-                          <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
-                            <SelectValue placeholder="Choose draft slot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Array.from({ length: captains.length }, (_, i) => String(i + 1)).map((slot) => {
-                              const takenByAnother = assignedSlots.includes(slot) && draftSlots[captain.team] !== slot;
-                              return <SelectItem key={slot} value={slot} disabled={takenByAnother}>Draft #{slot}</SelectItem>;
-                            })}
-                          </SelectContent>
-                        </Select>
-                        {draftSlots[captain.team] && <Badge className="rounded-full">#{draftSlots[captain.team]}</Badge>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <Clock3 className="w-5 h-5" /> Pick Clock
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-5xl font-black tracking-tight">{formatTime(timerSeconds)}</div>
-                <p className="text-slate-400 mt-2">1 minute per pick</p>
-                {currentTurn && (
-                  <div className="mt-4 rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div className="text-sm text-slate-400">On the clock</div>
-                    <div className="font-bold text-lg">{currentTurn.captain}</div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="xl:col-span-2 space-y-6">
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-white">
-                  <MonitorPlay className="w-5 h-5" /> ESPN-Style Big Board
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="md:col-span-2 relative">
-                    <Search className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search players"
-                      className="pl-9 bg-white/10 border-white/10 text-white"
-                    />
-                  </div>
-                  <Select value={positionFilter} onValueChange={setPositionFilter}>
-                    <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
-                      <SelectValue placeholder="Position filter" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="All">All Positions</SelectItem>
-                      <SelectItem value="Guard">Guard</SelectItem>
-                      <SelectItem value="Forward">Forward</SelectItem>
-                      <SelectItem value="Center">Center</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {filteredPlayers
-                    .sort((a, b) => {
-                      if (tierOrder[b.tier] !== tierOrder[a.tier]) return tierOrder[b.tier] - tierOrder[a.tier];
-                      return b.ranking - a.ranking;
-                    })
-                    .slice(0, 15)
-                    .map((player, index) => (
-                      <motion.button
-                        whileHover={{ y: -2 }}
-                        whileTap={{ scale: 0.98 }}
-                        key={player.name}
-                        onClick={() => makePick(player)}
-                        disabled={!draftStarted || !currentTurn}
-                        className="text-left p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="text-xs text-slate-400">#{index + 1} Available</div>
-                            <div className="font-semibold text-base">{player.name}</div>
-                            <div className="text-xs text-slate-400 mt-1">{player.position} • Age {player.age}</div>
-                          </div>
-                          <Badge className={`rounded-full border ${tierBadgeClass(player.tier)}`}>{player.tier}</Badge>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between text-sm">
-                          <span className="text-slate-400">Ranking</span>
-                          <span className="font-bold">{player.ranking}</span>
-                        </div>
-                      </motion.button>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <ArrowRightLeft className="w-5 h-5" /> Draft Order
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {orderedCaptains.length ? orderedCaptains.map((team, index) => {
-                      const captain = captains.find((c) => c.team === team);
-                      return (
-                        <div key={team} className="flex items-center justify-between p-3 rounded-2xl bg-white/5 border border-white/10">
-                          <span className="font-medium">#{index + 1}</span>
-                          <div className="text-right">
-                            <div>{team}</div>
-                            <div className="text-xs text-slate-400">{captain?.captain}</div>
-                          </div>
-                        </div>
-                      );
-                    }) : <p className="text-slate-400">Assign each team a draft number to build the order.</p>}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-white">
-                    <Trophy className="w-5 h-5" /> Current Pick
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {!draftStarted ? (
-                    <p className="text-slate-400">Draft has not started yet.</p>
-                  ) : currentTurn ? (
-                    <div className="space-y-3">
-                      <Badge className="rounded-full px-3 py-1">Round {currentTurn.round}</Badge>
-                      <div className="text-2xl font-black">{currentTurn.captain}</div>
-                      <p className="text-slate-300">is now on the clock.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="text-2xl font-black">Draft Complete</div>
-                      <p className="text-slate-300">All picks are in.</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-white">Draft Log</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-96 overflow-auto space-y-3 pr-1">
-                  {draftLog.length ? draftLog.map((pick) => (
-                    <div key={pick.pickNumber} className="rounded-2xl p-3 bg-white/5 border border-white/10">
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">Pick #{pick.pickNumber}</span>
-                        <Badge className="rounded-full">Round {pick.round}</Badge>
-                      </div>
-                      <p className="mt-2 text-sm text-slate-300">
-                        <span className="font-semibold text-white">{pick.captain}</span> selected <span className="font-semibold text-white">{pick.player.name}</span>
-                      </p>
-                    </div>
-                  )) : <p className="text-slate-400">No picks yet.</p>}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="xl:col-span-1 space-y-6">
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-white">Best Available</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {bestAvailable.map((player, index) => (
-                    <div key={player.name} className="rounded-2xl p-3 bg-white/5 border border-white/10">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <div className="text-xs text-slate-400">#{index + 1}</div>
-                          <div className="font-semibold">{player.name}</div>
-                          <div className="text-xs text-slate-400">{player.position}</div>
-                        </div>
-                        <div className="text-right">
-                          <Badge className={`rounded-full border ${tierBadgeClass(player.tier)}`}>{player.tier}</Badge>
-                          <div className="text-sm font-bold mt-2">{player.ranking}</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-              <CardHeader>
-                <CardTitle className="text-white">Teams</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4 max-h-[480px] overflow-auto pr-1">
-                  {captains.map((captain) => (
-                    <div key={captain.team} className="rounded-2xl p-4 bg-white/5 border border-white/10">
-                      <div className="flex items-center justify-between mb-3">
-                        <div>
-                          <span className="font-bold">{captain.team}</span>
-                          <div className="text-xs text-slate-400">Captain: {captain.captain}</div>
-                        </div>
-                        <Badge className="rounded-full">{teams[captain.team]?.length || 0} players</Badge>
-                      </div>
-                      <Separator className="bg-white/10 mb-3" />
-                      <div className="flex flex-wrap gap-2">
-                        {teams[captain.team]?.length ? teams[captain.team].map((player) => (
-                          <Badge key={player.name} variant="secondary" className="rounded-full">{player.name}</Badge>
-                        )) : <span className="text-sm text-slate-400">No picks yet</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {adminMode && (
-              <Card className="bg-white/5 border-white/10 rounded-3xl shadow-2xl">
-                <CardHeader>
-                  <CardTitle className="text-white">Commissioner Rankings Panel</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="mb-4 rounded-2xl bg-white/5 border border-white/10 p-3 text-sm text-slate-300">
-                    Edit any player's ranking or tier here. Player names stay untouched, so this works perfectly for mock drafts and future re-drafts.
-                  </div>
-                  <div className="max-h-[560px] overflow-auto space-y-3 pr-1">
-                    {players
-                      .slice()
-                      .sort((a, b) => {
-                        if (tierOrder[b.tier] !== tierOrder[a.tier]) return tierOrder[b.tier] - tierOrder[a.tier];
-                        return b.ranking - a.ranking;
-                      })
-                      .map((player) => (
-                        <div key={player.name} className="rounded-2xl p-3 bg-white/5 border border-white/10 space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="font-semibold">{player.name}</div>
-                              <div className="text-xs text-slate-400">{player.position} • Age {player.age}</div>
-                            </div>
-                            <Badge className={`rounded-full border ${tierBadgeClass(player.tier)}`}>{player.tier}</Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <div className="text-xs text-slate-400 mb-1">Ranking</div>
-                              <Input
-                                type="number"
-                                value={player.ranking}
-                                onChange={(e) => updatePlayerField(player.name, "ranking", e.target.value)}
-                                className="bg-white/10 border-white/10 text-white"
-                              />
-                            </div>
-                            <div>
-                              <div className="text-xs text-slate-400 mb-1">Tier</div>
-                              <Select value={player.tier} onValueChange={(value) => updatePlayerField(player.name, "tier", value)}>
-                                <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="S">S Tier</SelectItem>
-                                  <SelectItem value="A">A Tier</SelectItem>
-                                  <SelectItem value="B">B Tier</SelectItem>
-                                  <SelectItem value="C">C Tier</SelectItem>
-                                  <SelectItem value="D">D Tier</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-                            className="bg-white/10 border-white/10 text-white"
-                          />
-                          <Select value={player.tier} onValueChange={(value) => updatePlayerField(player.name, "tier", value)}>
-                            <SelectTrigger className="bg-white/10 border-white/10 text-white rounded-xl">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="S">S Tier</SelectItem>
-                              <SelectItem value="A">A Tier</SelectItem>
-                              <SelectItem value="B">B Tier</SelectItem>
-                              <SelectItem value="C">C Tier</SelectItem>
-                              <SelectItem value="D">D Tier</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+.team{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
 }
+
+.player{
+background:#334155;
+padding:6px;
+margin:5px;
+border-radius:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h1>JSL Draft Mock</h1>
+<p>Mock Draft Simulator</p>
+
+<div class="board">
+
+<div class="team">
+<h2>Smash House</h2>
+<p>Captain: Jesse Sloan</p>
+</div>
+
+<div class="team">
+<h2>Town Appliance</h2>
+<p>Captain: Yitzi Gross</p>
+</div>
+
+<div class="team">
+<h2>Teller Life Insurance</h2>
+<p>Captain: Moshe Feintuch</p>
+</div>
+
+<div class="team">
+<h2>Twillory</h2>
+<p>Captain: Rich Hochhouser</p>
+</div>
+
+<div class="team">
+<h2>Altbanq</h2>
+<p>Captain: Shmuel Englander</p>
+</div>
+
+<div class="team">
+<h2>Graber Media</h2>
+<p>Captain: Chaim Homnick</p>
+</div>
+
+<div class="team">
+<h2>Premium Pergolas</h2>
+<p>Captain: Michael Esquenazi</p>
+</div>
+
+<div class="team">
+<h2>Kol Ve'or</h2>
+<p>Captain: Yaakov Dvir</p>
+</div>
+
+</div>
+
+</body>
+</html>
