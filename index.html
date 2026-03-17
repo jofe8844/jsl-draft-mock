@@ -32,9 +32,16 @@
       padding: 10px 14px;
       font-size: 14px;
     }
-    button { background: #2563eb; color: white; cursor: pointer; }
+    button {
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
     button.secondary { background: #334155; }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
     .container {
       padding: 24px;
       display: grid;
@@ -49,7 +56,7 @@
     }
     .card h2 { margin: 0 0 14px; font-size: 20px; }
     .small { color: #cbd5e1; font-size: 13px; }
-    .team-box, .player-box, .log-box, .best-box, .results-box {
+    .team-box, .log-box, .best-box, .results-box {
       background: #0f172a;
       border: 1px solid #334155;
       border-radius: 12px;
@@ -71,8 +78,16 @@
       padding: 14px;
     }
     .player-btn:hover { background: #162033; }
-    .timer { font-size: 44px; font-weight: 800; margin: 8px 0; }
-    .on-clock { font-size: 24px; font-weight: 800; margin-top: 8px; }
+    .timer {
+      font-size: 44px;
+      font-weight: 800;
+      margin: 8px 0;
+    }
+    .on-clock {
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
     .team-roster span {
       display: inline-block;
       background: #334155;
@@ -80,12 +95,6 @@
       padding: 6px 10px;
       margin: 4px 4px 0 0;
       font-size: 12px;
-    }
-    .projection-select {
-      width: 100%;
-      margin-top: 8px;
-      background: #334155;
-      color: #fff;
     }
     .search-row {
       display: grid;
@@ -110,14 +119,16 @@
       color: #93c5fd;
       margin-top: 8px;
     }
-    .results-screen { display: none; padding: 24px; }
+    .results-screen {
+      display: none;
+      padding: 24px;
+    }
     .results-header { margin-bottom: 20px; }
     .results-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
       gap: 16px;
     }
-    .hidden { display: none !important; }
     @media (max-width: 1200px) {
       .container { grid-template-columns: 1fr; }
     }
@@ -132,11 +143,14 @@
         <option value="all">User drafts as every team</option>
         <option value="single">User drafts as one captain</option>
       </select>
+
       <select id="userTeamSelect"></select>
+
       <select id="cpuStyleSelect">
         <option value="best">CPU: Best Available</option>
         <option value="smart">CPU: Randomized Smart</option>
       </select>
+
       <button id="startBtn">Start Draft</button>
       <button id="pauseBtn" class="secondary">Pause Clock</button>
       <button id="resetBtn" class="secondary">Reset Draft</button>
@@ -147,7 +161,7 @@
   <div id="mainDraftView" class="container">
     <div>
       <div class="card">
-        <h2>Teams & Draft Slots</h2>
+        <h2>Locked Draft Order</h2>
         <div id="teamsList"></div>
       </div>
 
@@ -155,7 +169,7 @@
         <h2>Pick Clock</h2>
         <div class="timer" id="timer">1:00</div>
         <div class="small">1 minute per pick</div>
-        <div class="on-clock" id="onClock">Not started</div>
+        <div class="on-clock" id="onClock">Ready to start</div>
         <div class="turn-tag" id="turnType"></div>
       </div>
     </div>
@@ -205,6 +219,7 @@
 
   <script>
     const DRAFT_TIME = 60;
+
     const projectionOptions = [
       "Early First Round",
       "Late First Round",
@@ -219,7 +234,10 @@
       "Early 6th Round",
       "Late 6th Round"
     ];
-    const projectionOrder = Object.fromEntries(projectionOptions.map((p, i) => [p, projectionOptions.length - i]));
+
+    const projectionOrder = Object.fromEntries(
+      projectionOptions.map((p, i) => [p, projectionOptions.length - i])
+    );
 
     const teams = [
       { team: "Smash House", captain: "Jesse Sloan", slot: "3" },
@@ -284,30 +302,32 @@
     ];
 
     let draftStarted = false;
+    let draftComplete = false;
     let draftLog = [];
     let timer = DRAFT_TIME;
     let timerRunning = false;
     let interval = null;
-    let controlMode = 'all';
+    let controlMode = "all";
     let userTeam = teams[0].team;
     let cpuPending = false;
-    let cpuStyle = 'best';
-    let draftComplete = false;
+    let cpuStyle = "best";
 
-    function projectionValue(p) { return projectionOrder[p] || 0; }
+    function projectionValue(p) {
+      return projectionOrder[p] || 0;
+    }
+
     function formatTime(seconds) {
       const m = Math.floor(seconds / 60);
       const s = seconds % 60;
-      return `${m}:${String(s).padStart(2, '0')}`;
+      return `${m}:${String(s).padStart(2, "0")}`;
     }
 
     function orderedTeams() {
-      return [...teams].filter(t => t.slot !== '').sort((a, b) => Number(a.slot) - Number(b.slot));
+      return [...teams].sort((a, b) => Number(a.slot) - Number(b.slot));
     }
 
     function snakeOrder() {
       const ordered = orderedTeams();
-      if (ordered.length !== teams.length) return [];
       const rounds = Math.ceil(players.length / teams.length);
       const order = [];
       for (let r = 1; r <= rounds; r++) {
@@ -317,59 +337,76 @@
       return order;
     }
 
-    function draftedNames() { return new Set(draftLog.map(p => p.player.name)); }
+    function draftedNames() {
+      return new Set(draftLog.map(p => p.player.name));
+    }
+
     function availablePlayers() {
       const drafted = draftedNames();
       return players.filter(p => !drafted.has(p.name));
     }
+
     function currentTurn() {
-      const order = snakeOrder();
-      return order[draftLog.length] || null;
+      return snakeOrder()[draftLog.length] || null;
     }
+
     function isUserTurn() {
       const turn = currentTurn();
       if (!turn) return false;
-      if (controlMode === 'all') return true;
-      return turn.team === userTeam;
+      return controlMode === "all" ? true : turn.team === userTeam;
     }
 
     function sortedAvailablePlayers() {
-      return [...availablePlayers()].sort((a, b) => projectionValue(b.projection) - projectionValue(a.projection));
+      return [...availablePlayers()].sort(
+        (a, b) => projectionValue(b.projection) - projectionValue(a.projection)
+      );
     }
 
     function cpuBestPick() {
       const sorted = sortedAvailablePlayers();
-      if (cpuStyle === 'best') return sorted[0];
+      if (cpuStyle === "best") return sorted[0];
+
       const topPool = sorted.slice(0, Math.min(5, sorted.length));
       if (!topPool.length) return null;
+
       const weighted = [];
       topPool.forEach((player, index) => {
         const weight = Math.max(1, 6 - index);
         for (let i = 0; i < weight; i++) weighted.push(player);
       });
+
       return weighted[Math.floor(Math.random() * weighted.length)];
     }
 
     function maybeRunCpuPick() {
       if (!draftStarted || draftComplete) return;
-      const turn = currentTurn();
-      if (!turn) return;
+      if (!currentTurn()) return;
+
       if (isUserTurn()) {
         cpuPending = false;
         render();
         return;
       }
+
       if (cpuPending) return;
+
       cpuPending = true;
       render();
+
       setTimeout(() => {
         const pick = cpuBestPick();
         cpuPending = false;
-        if (pick && draftStarted && currentTurn() && !isUserTurn()) makePick(pick.name, true);
+        if (pick && draftStarted && currentTurn() && !isUserTurn()) {
+          makePick(pick.name, true);
+        }
       }, 900);
     }
 
-    function resetClock() { timer = DRAFT_TIME; render(); }
+    function resetClock() {
+      timer = DRAFT_TIME;
+      render();
+    }
+
     function startClock() {
       clearInterval(interval);
       timerRunning = true;
@@ -379,20 +416,19 @@
         render();
       }, 1000);
     }
-    function stopClock() { timerRunning = false; render(); }
 
-    function setSlot(teamName, slotValue) {
-      teams.forEach(t => { if (t.slot === slotValue) t.slot = ''; });
-      const team = teams.find(t => t.team === teamName);
-      team.slot = slotValue;
+    function stopClock() {
+      timerRunning = false;
       render();
     }
 
     function makePick(playerName, byCpu = false) {
       if (!draftStarted || draftComplete) return;
+
       const turn = currentTurn();
       if (!turn) return;
       if (!byCpu && !isUserTurn()) return;
+
       const player = players.find(p => p.name === playerName);
       if (!player) return;
 
@@ -401,7 +437,7 @@
         round: turn.round,
         team: turn.team,
         player: { ...player },
-        source: byCpu ? 'CPU' : 'User'
+        source: byCpu ? "CPU" : "User"
       });
 
       if (!currentTurn()) {
@@ -411,6 +447,7 @@
         resetClock();
         startClock();
       }
+
       render();
       maybeRunCpuPick();
     }
@@ -433,9 +470,8 @@
       timer = DRAFT_TIME;
       cpuPending = false;
       stopClock();
-      teams.forEach(t => t.slot = '');
-      document.getElementById('searchInput').value = '';
-      document.getElementById('positionFilter').value = 'All';
+      document.getElementById("searchInput").value = "";
+      document.getElementById("positionFilter").value = "All";
       render();
     }
 
@@ -444,59 +480,82 @@
     }
 
     function filteredPlayers() {
-      const search = document.getElementById('searchInput')?.value?.toLowerCase() || '';
-      const position = document.getElementById('positionFilter')?.value || 'All';
+      const search = document.getElementById("searchInput")?.value?.toLowerCase() || "";
+      const position = document.getElementById("positionFilter")?.value || "All";
+
       return availablePlayers()
-        .filter(p => p.name.toLowerCase().includes(search) && (position === 'All' || p.position.toLowerCase().includes(position.toLowerCase())))
+        .filter(p =>
+          p.name.toLowerCase().includes(search) &&
+          (position === "All" || p.position.toLowerCase().includes(position.toLowerCase()))
+        )
         .sort((a, b) => projectionValue(b.projection) - projectionValue(a.projection));
     }
 
     function bestAvailablePlayers() {
-      return [...availablePlayers()].sort((a, b) => projectionValue(b.projection) - projectionValue(a.projection)).slice(0, 10);
+      return [...availablePlayers()]
+        .sort((a, b) => projectionValue(b.projection) - projectionValue(a.projection))
+        .slice(0, 10);
     }
 
     function renderTopControls() {
-      const modeSel = document.getElementById('controlModeSelect');
-      const teamSel = document.getElementById('userTeamSelect');
-      const cpuSel = document.getElementById('cpuStyleSelect');
-      modeSel.value = controlMode;
-      cpuSel.value = cpuStyle;
-      teamSel.innerHTML = teams.map(t => `<option value="${t.team}" ${t.team === userTeam ? 'selected' : ''}>Draft as ${t.team}</option>`).join('');
-      teamSel.style.display = controlMode === 'single' ? 'inline-block' : 'none';
+      document.getElementById("controlModeSelect").value = controlMode;
+      document.getElementById("cpuStyleSelect").value = cpuStyle;
+
+      const teamSel = document.getElementById("userTeamSelect");
+      teamSel.innerHTML = teams
+        .map(t => `<option value="${t.team}" ${t.team === userTeam ? "selected" : ""}>Draft as ${t.team}</option>`)
+        .join("");
+
+      teamSel.style.display = controlMode === "single" ? "inline-block" : "none";
     }
 
     function renderTeams() {
-      const el = document.getElementById('teamsList');
-      el.innerHTML = '';
-      teams.forEach(team => {
-        const box = document.createElement('div');
-        box.className = 'team-box';
-        box.innerHTML = `<div class="team-title">${team.team}</div><div class="small">Captain: ${team.captain}</div>`;
+      const el = document.getElementById("teamsList");
+      el.innerHTML = "";
+
+      orderedTeams().forEach(team => {
+        const box = document.createElement("div");
+        box.className = "team-box";
         box.innerHTML = `
-  <div><strong>#${team.slot} ${team.team}</strong></div>
-  <div>Captain: ${team.captain}</div>
-  <div>Locked Slot</div>
-`;
+          <div class="team-title">#${team.slot} ${team.team}</div>
+          <div class="small">Captain: ${team.captain}</div>
+          <div class="small" style="margin-top:8px;">Slot is locked</div>
+        `;
+        el.appendChild(box);
       });
     }
 
     function renderClock() {
-      document.getElementById('timer').textContent = formatTime(timer);
+      document.getElementById("timer").textContent = formatTime(timer);
+
       const turn = currentTurn();
-      document.getElementById('onClock').textContent = draftComplete ? 'Draft complete' : (draftStarted ? (turn ? `${turn.team} is on the clock` : 'Draft complete') : 'Not started');
-      const turnType = document.getElementById('turnType');
-      if (!draftStarted || draftComplete || !turn) turnType.textContent = '';
-      else if (isUserTurn()) turnType.textContent = controlMode === 'all' ? 'User turn — you draft this pick' : `Your controlled team is up — ${userTeam}`;
-      else if (cpuPending) turnType.textContent = 'CPU is thinking...';
-      else turnType.textContent = 'CPU turn';
+      document.getElementById("onClock").textContent =
+        draftComplete ? "Draft complete" :
+        draftStarted ? (turn ? `${turn.team} is on the clock` : "Draft complete") :
+        "Ready to start";
+
+      const turnType = document.getElementById("turnType");
+      if (!draftStarted || draftComplete || !turn) {
+        turnType.textContent = "";
+      } else if (isUserTurn()) {
+        turnType.textContent =
+          controlMode === "all"
+            ? "User turn — you draft this pick"
+            : `Your controlled team is up — ${userTeam}`;
+      } else if (cpuPending) {
+        turnType.textContent = "CPU is thinking...";
+      } else {
+        turnType.textContent = "CPU turn";
+      }
     }
 
     function renderPlayers() {
-      const el = document.getElementById('playersGrid');
-      el.innerHTML = '';
+      const el = document.getElementById("playersGrid");
+      el.innerHTML = "";
+
       filteredPlayers().forEach(player => {
-        const btn = document.createElement('button');
-        btn.className = 'player-btn';
+        const btn = document.createElement("button");
+        btn.className = "player-btn";
         btn.disabled = !draftStarted || !currentTurn() || !isUserTurn() || draftComplete;
         btn.onclick = () => makePick(player.name, false);
         btn.innerHTML = `
@@ -506,35 +565,48 @@
         `;
         el.appendChild(btn);
       });
-      const note = document.getElementById('cpuNote');
-      if (draftComplete) note.textContent = 'Draft is complete. Final team results are shown below.';
-      else if (!draftStarted) note.textContent = 'Choose whether you want to draft as one captain or control every team before starting.';
-      else if (controlMode === 'all') note.textContent = 'User drafts every team manually. No CPU picks will be made.';
-      else if (isUserTurn()) note.textContent = `You are controlling ${userTeam}. Make this pick manually.`;
-      else note.textContent = `The current team is CPU-controlled, so the site will auto-pick using ${cpuStyle === 'best' ? 'Best Available' : 'Randomized Smart'} mode.`;
+
+      const note = document.getElementById("cpuNote");
+      if (draftComplete) {
+        note.textContent = "Draft is complete. Final team results are shown below.";
+      } else if (!draftStarted) {
+        note.textContent = "Draft order is locked in. Choose whether you want to control one team or every team, then start the draft.";
+      } else if (controlMode === "all") {
+        note.textContent = "User drafts every team manually. No CPU picks will be made.";
+      } else if (isUserTurn()) {
+        note.textContent = `You are controlling ${userTeam}. Make this pick manually.`;
+      } else {
+        note.textContent = `The current team is CPU-controlled, so the site will auto-pick using ${cpuStyle === "best" ? "Best Available" : "Randomized Smart"} mode.`;
+      }
     }
 
     function renderBestAvailable() {
-      const el = document.getElementById('bestAvailable');
-      el.innerHTML = '';
+      const el = document.getElementById("bestAvailable");
+      el.innerHTML = "";
+
       bestAvailablePlayers().forEach((player, i) => {
-        const box = document.createElement('div');
-        box.className = 'best-box';
-        box.innerHTML = `<div class="player-title">#${i + 1} ${player.name}</div><div class="small">${player.position} • ${player.projection}</div>`;
+        const box = document.createElement("div");
+        box.className = "best-box";
+        box.innerHTML = `
+          <div class="player-title">#${i + 1} ${player.name}</div>
+          <div class="small">${player.position} • ${player.projection}</div>
+        `;
         el.appendChild(box);
       });
     }
 
     function renderLog() {
-      const el = document.getElementById('draftLog');
-      el.innerHTML = '';
+      const el = document.getElementById("draftLog");
+      el.innerHTML = "";
+
       if (draftLog.length === 0) {
         el.innerHTML = `<div class="small">No picks yet.</div>`;
         return;
       }
+
       [...draftLog].reverse().forEach(item => {
-        const box = document.createElement('div');
-        box.className = 'log-box';
+        const box = document.createElement("div");
+        box.className = "log-box";
         box.innerHTML = `
           <div class="player-title">Pick #${item.pick}</div>
           <div class="small">Round ${item.round} • ${item.source} • ${item.player.projection}</div>
@@ -545,17 +617,18 @@
     }
 
     function renderRosters() {
-      const el = document.getElementById('teamsRosters');
-      el.innerHTML = '';
-      teams.forEach(team => {
+      const el = document.getElementById("teamsRosters");
+      el.innerHTML = "";
+
+      orderedTeams().forEach(team => {
         const roster = teamRoster(team.team);
-        const box = document.createElement('div');
-        box.className = 'team-box';
+        const box = document.createElement("div");
+        box.className = "team-box";
         box.innerHTML = `
-          <div class="team-title">${team.team}</div>
+          <div class="team-title">#${team.slot} ${team.team}</div>
           <div class="small">Captain: ${team.captain}</div>
           <div class="team-roster" style="margin-top:8px;">
-            ${roster.length ? roster.map(player => `<span>${player.name}</span>`).join('') : `<span>No picks yet</span>`}
+            ${roster.length ? roster.map(player => `<span>${player.name}</span>`).join("") : `<span>No picks yet</span>`}
           </div>
         `;
         el.appendChild(box);
@@ -563,17 +636,21 @@
     }
 
     function renderResults() {
-      const resultsGrid = document.getElementById('resultsGrid');
-      resultsGrid.innerHTML = '';
-      teams.forEach(team => {
+      const resultsGrid = document.getElementById("resultsGrid");
+      resultsGrid.innerHTML = "";
+
+      orderedTeams().forEach(team => {
         const roster = teamRoster(team.team);
-        const box = document.createElement('div');
-        box.className = 'results-box';
+        const box = document.createElement("div");
+        box.className = "results-box";
         box.innerHTML = `
-          <div class="team-title">${team.team}</div>
+          <div class="team-title">#${team.slot} ${team.team}</div>
           <div class="small">Captain: ${team.captain}</div>
           <div style="margin-top:10px;">
-            ${roster.length ? roster.map((player, idx) => `<div class="small" style="margin-bottom:6px;">${idx + 1}. ${player.name} — ${player.projection}</div>`).join('') : `<div class="small">No picks</div>`}
+            ${roster.length
+              ? roster.map((player, idx) => `<div class="small" style="margin-bottom:6px;">${idx + 1}. ${player.name} — ${player.projection}</div>`).join("")
+              : `<div class="small">No picks</div>`
+            }
           </div>
         `;
         resultsGrid.appendChild(box);
@@ -589,17 +666,15 @@
       renderLog();
       renderRosters();
       renderResults();
-      document.getElementById('startBtn').disabled = orderedTeams().length !== teams.length || draftStarted;
-      document.getElementById('pauseBtn').textContent = timerRunning ? 'Pause Clock' : 'Resume Clock';
-      document.getElementById('mainDraftView').style.display = draftComplete ? 'none' : 'grid';
-      document.getElementById('resultsScreen').style.display = draftComplete ? 'block' : 'none';
+
+      document.getElementById("startBtn").disabled = draftStarted;
+      document.getElementById("pauseBtn").textContent = timerRunning ? "Pause Clock" : "Resume Clock";
+
+      document.getElementById("mainDraftView").style.display = draftComplete ? "none" : "grid";
+      document.getElementById("resultsScreen").style.display = draftComplete ? "block" : "none";
     }
 
-    document.getElementById('startBtn').onclick = () => {
-      if (orderedTeams().length !== teams.length) {
-        alert('Each team must choose a draft slot first.');
-        return;
-      }
+    document.getElementById("startBtn").onclick = () => {
       draftStarted = true;
       draftComplete = false;
       timer = DRAFT_TIME;
@@ -607,61 +682,35 @@
       render();
       maybeRunCpuPick();
     };
-    document.getElementById('pauseBtn').onclick = () => {
+
+    document.getElementById("pauseBtn").onclick = () => {
       if (!draftStarted || draftComplete) return;
       if (timerRunning) stopClock();
       else startClock();
       render();
     };
-    document.getElementById('resetBtn').onclick = resetDraft;
-    document.getElementById('undoBtn').onclick = undoLastPick;
-    document.getElementById('searchInput').addEventListener('input', render);
-    document.getElementById('positionFilter').addEventListener('change', render);
-    document.getElementById('controlModeSelect').addEventListener('change', (e) => { controlMode = e.target.value; render(); maybeRunCpuPick(); });
-    document.getElementById('userTeamSelect').addEventListener('change', (e) => { userTeam = e.target.value; render(); maybeRunCpuPick(); });
-    document.getElementById('cpuStyleSelect').addEventListener('change', (e) => { cpuStyle = e.target.value; render(); maybeRunCpuPick(); });
+
+    document.getElementById("resetBtn").onclick = resetDraft;
+    document.getElementById("undoBtn").onclick = undoLastPick;
+    document.getElementById("searchInput").addEventListener("input", render);
+    document.getElementById("positionFilter").addEventListener("change", render);
+    document.getElementById("controlModeSelect").addEventListener("change", (e) => {
+      controlMode = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
+    document.getElementById("userTeamSelect").addEventListener("change", (e) => {
+      userTeam = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
+    document.getElementById("cpuStyleSelect").addEventListener("change", (e) => {
+      cpuStyle = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
 
     render();
-  </script>
-  <audio id="tickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-clock-ticking-1050.mp3" loop></audio>
-  <audio id="beepSound" src="https://assets.mixkit.co/sfx/preview/mixkit-classic-alarm-995.mp3"></audio>
-  <audio id="buzzerSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
-
-  <script>
-    const tickSound = document.getElementById('tickSound');
-    const beepSound = document.getElementById('beepSound');
-    const buzzerSound = document.getElementById('buzzerSound');
-
-    function handleSounds() {
-      if (!draftStarted || draftComplete) {
-        tickSound.pause();
-        return;
-      }
-
-      if (timer > 10) {
-        if (tickSound.paused) {
-          tickSound.currentTime = 0;
-          tickSound.play();
-        }
-      } else {
-        tickSound.pause();
-        if (timer > 0) {
-          beepSound.currentTime = 0;
-          beepSound.play();
-        }
-      }
-
-      if (timer === 0) {
-        buzzerSound.currentTime = 0;
-        buzzerSound.play();
-      }
-    }
-
-    const originalRenderClock = renderClock;
-    renderClock = function() {
-      originalRenderClock();
-      handleSounds();
-    };
   </script>
 </body>
 </html>
