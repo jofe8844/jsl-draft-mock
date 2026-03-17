@@ -30,6 +30,7 @@
       gap: 12px;
       flex-wrap: wrap;
       margin-top: 18px;
+      align-items: center;
     }
     button, select, input {
       border: none;
@@ -80,11 +81,6 @@
       font-weight: 700;
       margin-bottom: 4px;
     }
-    .grid-2 {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
     .grid-players {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -124,12 +120,6 @@
       font-weight: 800;
       margin-top: 8px;
     }
-    .controls-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 14px;
-    }
     .team-roster span {
       display: inline-block;
       background: #334155;
@@ -156,10 +146,22 @@
       gap: 10px;
       margin-bottom: 14px;
     }
-    .search-row input, .search-row select {
+    .search-row input, .search-row select, .topbar select {
       background: #0f172a;
       color: white;
       border: 1px solid #334155;
+    }
+    .mode-box {
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 12px;
+    }
+    .turn-tag {
+      font-weight: 700;
+      color: #93c5fd;
+      margin-top: 8px;
     }
     @media (max-width: 1200px) {
       .container { grid-template-columns: 1fr; }
@@ -171,6 +173,15 @@
     <h1>JSL Draft Mock</h1>
     <p>JFL Basketball Draft Board</p>
     <div class="topbar">
+      <select id="controlModeSelect">
+        <option value="all">User drafts as every team</option>
+        <option value="single">User drafts as one captain</option>
+      </select>
+      <select id="userTeamSelect"></select>
+      <select id="cpuStyleSelect">
+        <option value="best">CPU: Best Available</option>
+        <option value="smart">CPU: Randomized Smart</option>
+      </select>
       <button id="startBtn">Start Draft</button>
       <button id="pauseBtn" class="secondary">Pause Clock</button>
       <button id="resetBtn" class="secondary">Reset Draft</button>
@@ -190,6 +201,7 @@
         <div class="timer" id="timer">1:00</div>
         <div class="small">1 minute per pick</div>
         <div class="on-clock" id="onClock">Not started</div>
+        <div class="turn-tag" id="turnType"></div>
       </div>
     </div>
 
@@ -205,6 +217,7 @@
             <option value="Center">Center</option>
           </select>
         </div>
+        <div id="cpuNote" class="mode-box small"></div>
         <div class="grid-players" id="playersGrid"></div>
       </div>
 
@@ -303,6 +316,10 @@
     let timer = DRAFT_TIME;
     let timerRunning = false;
     let interval = null;
+    let controlMode = 'all';
+    let userTeam = teams[0].team;
+    let cpuPending = false;
+    let cpuStyle = 'best';
 
     function tierValue(t) {
       return { S: 5, A: 4, B: 3, C: 2, D: 1 }[t] || 0;
@@ -346,6 +363,57 @@
       return order[draftLog.length] || null;
     }
 
+    function isUserTurn() {
+      const turn = currentTurn();
+      if (!turn) return false;
+      if (controlMode === 'all') return true;
+      return turn.team === userTeam;
+    }
+
+    function sortedAvailablePlayers() {
+      return [...availablePlayers()].sort((a, b) => {
+        if (tierValue(b.tier) !== tierValue(a.tier)) return tierValue(b.tier) - tierValue(a.tier);
+        return b.ranking - a.ranking;
+      });
+    }
+
+    function cpuBestPick() {
+      const sorted = sortedAvailablePlayers();
+      if (cpuStyle === 'best') return sorted[0];
+      if (cpuStyle === 'smart') {
+        const topPool = sorted.slice(0, Math.min(5, sorted.length));
+        if (!topPool.length) return null;
+        const weighted = [];
+        topPool.forEach((player, index) => {
+          const weight = Math.max(1, 6 - index);
+          for (let i = 0; i < weight; i++) weighted.push(player);
+        });
+        return weighted[Math.floor(Math.random() * weighted.length)];
+      }
+      return sorted[0];
+    }
+
+    function maybeRunCpuPick() {
+      if (!draftStarted) return;
+      const turn = currentTurn();
+      if (!turn) return;
+      if (isUserTurn()) {
+        cpuPending = false;
+        render();
+        return;
+      }
+      if (cpuPending) return;
+      cpuPending = true;
+      render();
+      setTimeout(() => {
+        const pick = cpuBestPick();
+        cpuPending = false;
+        if (pick && draftStarted && currentTurn() && !isUserTurn()) {
+          makePick(pick.name, true);
+        }
+      }, 900);
+    }
+
     function resetClock() {
       timer = DRAFT_TIME;
       render();
@@ -377,10 +445,11 @@
       render();
     }
 
-    function makePick(playerName) {
+    function makePick(playerName, byCpu = false) {
       if (!draftStarted) return;
       const turn = currentTurn();
       if (!turn) return;
+      if (!byCpu && !isUserTurn()) return;
       const player = players.find(p => p.name === playerName);
       if (!player) return;
 
@@ -388,27 +457,32 @@
         pick: draftLog.length + 1,
         round: turn.round,
         team: turn.team,
-        player: { ...player }
+        player: { ...player },
+        source: byCpu ? 'CPU' : 'User'
       });
 
       resetClock();
       if (currentTurn()) startClock();
       else stopClock();
       render();
+      maybeRunCpuPick();
     }
 
     function undoLastPick() {
       if (draftLog.length === 0) return;
       draftLog.pop();
+      cpuPending = false;
       resetClock();
       if (draftStarted && currentTurn()) startClock();
       render();
+      maybeRunCpuPick();
     }
 
     function resetDraft() {
       draftStarted = false;
       draftLog = [];
       timer = DRAFT_TIME;
+      cpuPending = false;
       stopClock();
       teams.forEach(t => t.slot = "");
       render();
@@ -443,6 +517,16 @@
         .slice(0, 10);
     }
 
+    function renderTopControls() {
+      const modeSel = document.getElementById('controlModeSelect');
+      const teamSel = document.getElementById('userTeamSelect');
+      const cpuSel = document.getElementById('cpuStyleSelect');
+      modeSel.value = controlMode;
+      cpuSel.value = cpuStyle;
+      teamSel.innerHTML = teams.map(t => `<option value="${t.team}" ${t.team === userTeam ? 'selected' : ''}>Draft as ${t.team}</option>`).join('');
+      teamSel.style.display = controlMode === 'single' ? 'inline-block' : 'none';
+    }
+
     function renderTeams() {
       const el = document.getElementById("teamsList");
       el.innerHTML = "";
@@ -475,6 +559,17 @@
       document.getElementById("onClock").textContent = draftStarted
         ? (turn ? `${turn.team} is on the clock` : "Draft complete")
         : "Not started";
+
+      const turnType = document.getElementById('turnType');
+      if (!draftStarted || !turn) {
+        turnType.textContent = '';
+      } else if (isUserTurn()) {
+        turnType.textContent = controlMode === 'all' ? 'User turn — you draft this pick' : `Your controlled team is up — ${userTeam}`;
+      } else if (cpuPending) {
+        turnType.textContent = 'CPU is thinking...';
+      } else {
+        turnType.textContent = 'CPU turn';
+      }
     }
 
     function renderPlayers() {
@@ -483,8 +578,8 @@
       filteredPlayers().forEach(player => {
         const btn = document.createElement("button");
         btn.className = "player-btn";
-        btn.disabled = !draftStarted || !currentTurn();
-        btn.onclick = () => makePick(player.name);
+        btn.disabled = !draftStarted || !currentTurn() || !isUserTurn();
+        btn.onclick = () => makePick(player.name, false);
         btn.innerHTML = `
           <div class="player-title">${player.name}</div>
           <div class="small">${player.position} • Age ${player.age}</div>
@@ -495,6 +590,17 @@
         `;
         el.appendChild(btn);
       });
+
+      const note = document.getElementById('cpuNote');
+      if (!draftStarted) {
+        note.textContent = 'Choose whether you want to draft as one captain or control every team before starting.';
+      } else if (controlMode === 'all') {
+        note.textContent = 'User drafts every team manually. No CPU picks will be made.';
+      } else if (isUserTurn()) {
+        note.textContent = `You are controlling ${userTeam}. Make this pick manually.`;
+      } else {
+        note.textContent = `The current team is CPU-controlled, so the site will auto-pick using ${cpuStyle === 'best' ? 'Best Available' : 'Randomized Smart'} mode.`;
+      }
     }
 
     function renderBestAvailable() {
@@ -523,7 +629,7 @@
         box.className = "log-box";
         box.innerHTML = `
           <div class="player-title">Pick #${item.pick}</div>
-          <div class="small">Round ${item.round}</div>
+          <div class="small">Round ${item.round} • ${item.source}</div>
           <div style="margin-top:6px;">${item.team} selected <strong>${item.player.name}</strong></div>
         `;
         el.appendChild(box);
@@ -594,6 +700,7 @@
     }
 
     function render() {
+      renderTopControls();
       renderTeams();
       renderClock();
       renderPlayers();
@@ -601,8 +708,8 @@
       renderLog();
       renderRosters();
       renderRankingsPanel();
-
       document.getElementById("startBtn").disabled = orderedTeams().length !== teams.length || draftStarted;
+      document.getElementById('pauseBtn').textContent = timerRunning ? 'Pause Clock' : 'Resume Clock';
     }
 
     document.getElementById("startBtn").onclick = () => {
@@ -614,20 +721,35 @@
       timer = DRAFT_TIME;
       startClock();
       render();
+      maybeRunCpuPick();
     };
 
     document.getElementById("pauseBtn").onclick = () => {
       if (!draftStarted) return;
       if (timerRunning) stopClock();
       else startClock();
-      document.getElementById("pauseBtn").textContent = timerRunning ? "Pause Clock" : "Resume Clock";
+      render();
     };
 
     document.getElementById("resetBtn").onclick = resetDraft;
     document.getElementById("undoBtn").onclick = undoLastPick;
-
     document.getElementById("searchInput").addEventListener("input", render);
     document.getElementById("positionFilter").addEventListener("change", render);
+    document.getElementById('controlModeSelect').addEventListener('change', (e) => {
+      controlMode = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
+    document.getElementById('userTeamSelect').addEventListener('change', (e) => {
+      userTeam = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
+    document.getElementById('cpuStyleSelect').addEventListener('change', (e) => {
+      cpuStyle = e.target.value;
+      render();
+      maybeRunCpuPick();
+    });
 
     render();
   </script>
