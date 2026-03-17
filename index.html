@@ -630,5 +630,45 @@
 
     render();
   </script>
+  <audio id="tickSound" src="https://assets.mixkit.co/sfx/preview/mixkit-clock-ticking-1050.mp3" loop></audio>
+  <audio id="beepSound" src="https://assets.mixkit.co/sfx/preview/mixkit-classic-alarm-995.mp3"></audio>
+  <audio id="buzzerSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-retro-game-over-213.mp3"></audio>
+
+  <script>
+    const tickSound = document.getElementById('tickSound');
+    const beepSound = document.getElementById('beepSound');
+    const buzzerSound = document.getElementById('buzzerSound');
+
+    function handleSounds() {
+      if (!draftStarted || draftComplete) {
+        tickSound.pause();
+        return;
+      }
+
+      if (timer > 10) {
+        if (tickSound.paused) {
+          tickSound.currentTime = 0;
+          tickSound.play();
+        }
+      } else {
+        tickSound.pause();
+        if (timer > 0) {
+          beepSound.currentTime = 0;
+          beepSound.play();
+        }
+      }
+
+      if (timer === 0) {
+        buzzerSound.currentTime = 0;
+        buzzerSound.play();
+      }
+    }
+
+    const originalRenderClock = renderClock;
+    renderClock = function() {
+      originalRenderClock();
+      handleSounds();
+    };
+  </script>
 </body>
 </html>
