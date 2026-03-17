@@ -472,18 +472,11 @@
         const box = document.createElement('div');
         box.className = 'team-box';
         box.innerHTML = `<div class="team-title">${team.team}</div><div class="small">Captain: ${team.captain}</div>`;
-        const select = document.createElement('select');
-        select.style.marginTop = '10px';
-        select.style.width = '100%';
-        select.disabled = draftStarted;
-        select.innerHTML = `<option value="">Choose draft slot</option>` + [...Array(teams.length)].map((_, i) => {
-          const val = String(i + 1);
-          const taken = teams.some(t => t.team !== team.team && t.slot === val);
-          return `<option value="${val}" ${team.slot === val ? 'selected' : ''} ${taken ? 'disabled' : ''}>Draft #${val}</option>`;
-        }).join('');
-        select.onchange = (e) => setSlot(team.team, e.target.value);
-        box.appendChild(select);
-        el.appendChild(box);
+        box.innerHTML = `
+  <div><strong>#${team.slot} ${team.team}</strong></div>
+  <div>Captain: ${team.captain}</div>
+  <div>Locked Slot</div>
+`;
       });
     }
 
