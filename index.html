@@ -133,8 +133,25 @@
       .container { grid-template-columns: 1fr; }
     }
   </style>
+  #maintenanceScreen {
+  position: fixed;
+  inset: 0;
+  background: black;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 999999;
+  font-size: 48px;
+  font-weight: 800;
+  padding: 20px;
+}
 </head>
 <body>
+  <div id="maintenanceScreen">
+  <div>Mock Draft not available</div>
+</div>
   <div class="header">
     <h1>JSL Draft Mock</h1>
     <p>JFL Basketball Draft Board</p>
